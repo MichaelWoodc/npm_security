@@ -23,3 +23,54 @@ tail -50 /data/logs/proxy-host-11_access.log
 # Monitor specific IP addresses
 tail -f /data/logs/proxy-host-*.log | grep "104.198.129.164"
 
+
+# Check fail2ban banned clients
+sudo fail2ban-client status npm-401
+
+   |- Total banned:	2
+   `- Banned IP list:	20.171.207.38 104.198.129.164
+science@main-pi:~/Desktop/Shortcuts/html/airbnb $ # See currently banned IPs
+sudo fail2ban-client status npm-comprehensive
+
+# Check iptables to see the actual firewall rules
+sudo iptables -L -n | grep -A 5 f2b
+
+# See detailed ban list
+sudo iptables -L f2b-npm-comprehensive -n
+2025-10-25 23:16:20,863 fail2ban                [1033355]: ERROR   NOK: ('npm-comprehensive',)
+Sorry but the jail 'npm-comprehensive' does not exist
+f2b-npm-401  6    --  0.0.0.0/0            0.0.0.0/0            multiport dports 80,443
+ts-input   0    --  0.0.0.0/0            0.0.0.0/0           
+
+Chain FORWARD (policy DROP)
+target     prot opt source               destination         
+ts-forward  0    --  0.0.0.0/0            0.0.0.0/0           
+--
+Chain f2b-npm-401 (1 references)
+target     prot opt source               destination         
+REJECT     0    --  104.198.129.164      0.0.0.0/0            reject-with icmp-port-unreachable
+REJECT     0    --  20.171.207.38        0.0.0.0/0            reject-with icmp-port-unreachable
+RETURN     0    --  0.0.0.0/0            0.0.0.0/0           
+
+iptables v1.8.9 (nf_tables): chain `f2b-npm-comprehensive' in table `filter' is incompatible, use 'nft' tool.
+science@main-pi:~/Desktop/Shortcuts/html/airbnb $ 
+
+
+
+# Check all Fail2Ban jails status
+sudo fail2ban-client status
+
+# Check specific NPM jails
+sudo fail2ban-client status npm-401
+sudo fail2ban-client status npm-comprehensive
+
+# See currently banned IPs
+sudo fail2ban-client status npm-401 | grep "Banned IP list"
+sudo fail2ban-client status npm-comprehensive | grep "Banned IP list"
+
+# Check iptables to see active blocks
+sudo iptables -L INPUT -n | grep -E "(f2b|REJECT)"
+
+
+## NOTES:
+If your docker NPM instance is on the same host as your fail2ban instance, your NPM must be in host networking mode for blocking to be effective.
