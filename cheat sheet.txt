@@ -1,0 +1,25 @@
+# Watch ALL access logs in real-time
+tail -f /data/logs/proxy-host-*.log
+
+# Watch specific proxy host logs
+tail -f /data/logs/proxy-host-11_access.log
+tail -f /data/logs/proxy-host-7_access.log
+tail -f /data/logs/proxy-host-3_access.log
+
+# Watch for failed logins only
+tail -f /data/logs/proxy-host-*.log | grep "401"
+
+# Count failed login attempts per host
+for log in /data/logs/proxy-host-*_access.log; do
+    echo "$(basename $log): $(grep -c "401" "$log") failed logins"
+done
+
+# Search for specific status codes
+grep -E "(401|403|404|444)" /data/logs/proxy-host-*.log
+
+# See recent activity (last 50 lines)
+tail -50 /data/logs/proxy-host-11_access.log
+
+# Monitor specific IP addresses
+tail -f /data/logs/proxy-host-*.log | grep "104.198.129.164"
+
