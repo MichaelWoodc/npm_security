@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo "=== Gathering all Fail2ban jails ==="
+JAILS=$(sudo fail2ban-client status | grep "Jail list:" | cut -d: -f2 | tr ',' ' ')
+
+ALL_IPS=""
+
+echo "=== Collecting banned IPs from all jails ==="
+for JAIL in $JAILS; do
+    echo "[*] Checking jail: $JAIL"
+    IPS=$(sudo fail2ban-client status "$JAIL" \
+        | grep "Banned IP list:" \
+        | sed 's/.*Banned IP list:[ \t]*//')
+    ALL_IPS="$ALL_IPS $IPS"
+done
+
+# Deduplicate IPs
+IPS_DEDUPED=$(echo $ALL_IPS | tr ' ' '\n' | sort -u | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}')
+
+echo ""
+echo "=== Unique banned IPs found ==="
+echo "$IPS_DEDUPED"
+echo ""
+
+echo "=== Running WHOIS lookups ==="
+
+for IP in $IPS_DEDUPED; do
+    echo ""
+    echo "---------------------------------------"
+    echo "WHOIS for: $IP"
+    echo "---------------------------------------"
+    whois "$IP" 2>/dev/null | egrep -i "OrgName|Organization|owner|netname|country|CIDR|inetnum"
+done
+
+echo ""
+echo "=== Done ==="
